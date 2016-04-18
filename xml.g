@@ -1,5 +1,16 @@
 grammar xml;
 
+options{
+output=AST;
+}
+
+tokens {
+StartTag;
+EndTag;
+EmptyTag;
+Content;
+}
+
 
 @lexer::members {
 	boolean inside = false;
@@ -9,10 +20,10 @@ grammar xml;
 document	: element;
 
 element		: empty_elem_tag | stag content etag;
-stag		: Open name Close;
-etag		: OpenSlash name Close;
-content		: char_data? (element char_data?)*;
-empty_elem_tag	: Open name SlashClose;
+stag		: Open name Close -> ^(StartTag name);
+etag		: OpenSlash name Close -> ^(EndTag name);
+content		: char_data? (element char_data?)* -> ^(Content char_data? (element char_data?)*);
+empty_elem_tag	: Open name SlashClose -> ^(EmptyTag name);
 
 Open		: '<' { inside = true; };
 OpenSlash	: '</' { inside = true; };
