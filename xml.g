@@ -9,6 +9,7 @@ StartTag;
 EndTag;
 EmptyTag;
 Content;
+Element;
 }
 
 
@@ -19,7 +20,7 @@ Content;
 
 document	: element;
 
-element		: empty_elem_tag | stag content etag;
+element		: empty_elem_tag -> ^(Element empty_elem_tag) | stag content etag -> ^(Element stag content etag);
 stag		: Open name Close -> ^(StartTag name);
 etag		: OpenSlash name Close -> ^(EndTag name);
 content		: char_data? (element char_data?)* -> ^(Content char_data? (element char_data?)*);
