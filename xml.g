@@ -1,17 +1,8 @@
 grammar xml;
 
-@lexer::header {
-	
-}
 
 @lexer::members {
-	enum Modes { OUTSIDE, INSIDE };
-	
-	Stack<Modes> mode = new Stack();
-	{
-		mode.push(Modes.OUTSIDE);
-		System.out.println("mode size: " + mode.size());
-	}
+	boolean inside = false;
 }
 
 
@@ -23,25 +14,24 @@ etag		: OpenSlash name Close;
 content		: char_data? (element char_data?)*;
 empty_elem_tag	: Open name SlashClose;
 
-Open		: '<' { mode.push(Modes.INSIDE); };
-OpenSlash	: '</' { mode.push(Modes.INSIDE); };
+Open		: '<' { inside = true; };
+OpenSlash	: '</' { inside = true; };
 	
 char_data	: CharData;
-CharData	: {mode.peek() == Modes.OUTSIDE}?=> ~('<' | '&')+;
+CharData	: {!inside}?=> ~('<' | '&')+;
 
-Close		: {mode.peek() == Modes.INSIDE}?=> '>' { mode.pop(); };
-Slash		: {mode.peek() == Modes.INSIDE}?=> '/';
-SlashClose	: {mode.peek() == Modes.INSIDE}?=> '/>' { mode.pop(); };
+Close		: {inside}?=> '>' { inside = false; };
+Slash		: {inside}?=> '/';
+SlashClose	: {inside}?=> '/>' { inside = false; };
 
 name		: Name;
-Name		: {mode.peek() == Modes.OUTSIDE}?=> (Letter | '_' | ':') (Letter | Digit | '.' | '_' | ':')+;
+Name		: {inside}?=> (Letter | '_' | ':') (Letter | Digit | '.' | '_' | ':')*;
 
 fragment Letter	: ('A'..'Z') | ('a'..'z');
 fragment Digit	: ('0'..'9');
 
-/*
-test	:	(name | text | t)* EOF;
-name	:	Name;
-text	:	Text;	
-t	:	Open | Close | SlashClose | Slash;
-*/
+
+test	:	(name | char_data | t)* EOF;
+//name	:	Name;
+//char_data	:	CharData;
+t	:	Open | Close | SlashClose | Slash | OpenSlash;
