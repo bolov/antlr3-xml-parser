@@ -14,30 +14,31 @@ Element;
 
 
 @lexer::members {
-	boolean inside = false;
+	boolean inside_tag = false;
 }
 
 
 document	: element;
 
-element		: empty_elem_tag -> ^(Element empty_elem_tag) | stag content etag -> ^(Element stag content etag);
+element		: empty_elem_tag -> ^(Element empty_elem_tag) |
+		  stag content etag -> ^(Element stag content etag);
 stag		: Open name Close -> ^(StartTag name);
 etag		: OpenSlash name Close -> ^(EndTag name);
 content		: char_data? (element char_data?)* -> ^(Content char_data? (element char_data?)*);
 empty_elem_tag	: Open name SlashClose -> ^(EmptyTag name);
 
-Open		: '<' { inside = true; };
-OpenSlash	: '</' { inside = true; };
+Open		: '<' { inside_tag = true; };
+OpenSlash	: '</' { inside_tag = true; };
 	
 char_data	: CharData;
-CharData	: {!inside}?=> ~('<' | '&')+;
+CharData	: {!inside_tag}?=> ~('<' | '&')+;
 
-Close		: {inside}?=> '>' { inside = false; };
-Slash		: {inside}?=> '/';
-SlashClose	: {inside}?=> '/>' { inside = false; };
+Close		: {inside_tag}?=> '>' { inside_tag = false; };
+Slash		: {inside_tag}?=> '/';
+SlashClose	: {inside_tag}?=> '/>' { inside_tag = false; };
 
 name		: Name;
-Name		: {inside}?=> (Letter | '_' | ':') (Letter | Digit | '.' | '_' | ':')*;
+Name		: {inside_tag}?=> (Letter | '_' | ':') (Letter | Digit | '.' | '-' | '_' | ':')*;
 
 fragment Letter	: ('A'..'Z') | ('a'..'z');
 fragment Digit	: ('0'..'9');
