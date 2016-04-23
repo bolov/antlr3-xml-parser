@@ -15,15 +15,18 @@ Reference;
 
 @lexer::members {
 	boolean inside_tag = false;
+	boolean squoted = false;
+	boolean dquoted = false;
 }
 
 document	: element EOF;
 
 element		: empty_elem_tag -> ^(Element empty_elem_tag) |
 		  stag content etag -> ^(Element stag content etag);
-stag		: Open name WS? Close -> ^(StartTag name);
+stag		: Open name (WS attribute)* WS? Close -> ^(StartTag name attribute*);
+attribute	: Name Eq att_value -> ^(Name att_value);
 etag		: OpenSlash name WS? Close -> ^(EndTag name);
-content		: content_impl -> ^(Content content_impl);
+content		: content_impl -> ^(Content content_impl?);
 content_impl	: char_data? ((element | reference) char_data?)*;
 
 empty_elem_tag	: Open name WS? SlashClose -> ^(EmptyTag name);
@@ -34,12 +37,26 @@ OpenSlash	: '</' { inside_tag = true; };
 char_data	: CharData;
 CharData	: {!inside_tag}?=> ~('<' | '&')+;
 
-Close		: {inside_tag}?=> '>' { inside_tag = false; };
-Slash		: {inside_tag}?=> '/';
-SlashClose	: {inside_tag}?=> '/>' { inside_tag = false; };
+Close		: {inside_tag && !squoted && !dquoted}?=> '>' { inside_tag = false; };
+Slash		: {inside_tag && !squoted && !dquoted}?=> '/';
+SlashClose	: {inside_tag && !squoted && !dquoted}?=> '/>' { inside_tag = false; };
 
 name		: Name;
-Name		: {inside_tag}?=> NameHead NameTail;
+Name		: {inside_tag && !squoted && !dquoted}?=> NameHead NameTail;
+
+Eq		: {inside_tag && !squoted && !dquoted}?=> '=';
+
+SQuotedPart	: {squoted}?=> ~('<' | '&' | '\'')+;
+DQuotedPart	: {dquoted}?=> ~('<' | '&' | '\"')+;
+
+
+att_value	: DQuoteOpen! (DQuotedPart | reference)* DQuoteClose! |
+		  SQuoteOpen! (SQuotedPart | reference)* SQuoteClose!;
+
+DQuoteOpen	: {inside_tag && !squoted && !dquoted}?=> '"' {dquoted = true;};
+DQuoteClose	: {dquoted}?=> '"' {dquoted = false;};	
+SQuoteOpen	: {inside_tag && !squoted && !dquoted}?=> '\'' {squoted = true;};
+SQuoteClose	: {squoted}?=> '\'' {squoted = false;};	
 
 CharRefDec	: '&#' Digit+ ';';
 CharRefHex	: '&#x' HexDigit+ ';';
@@ -62,8 +79,11 @@ WS		: (' ' | '\t' | '\r' | '\n')+;
 ws		: WS;
 
 
-test	:	(name | char_data | reference | invalid_ref | t | ws )* EOF;
+test	:	(name | char_data | reference | invalid_ref | t | quote | dquoted_part | squoted_part | Eq | ws )* EOF;
 //name	:	Name;
 //char_data	:	CharData;
 invalid_ref	: InvalidRef;
+quote		: DQuoteClose | DQuoteOpen | SQuoteClose | SQuoteOpen;
+squoted_part	: SQuotedPart;
+dquoted_part	: DQuotedPart;
 t	:	Open | Close | SlashClose | Slash | OpenSlash;
