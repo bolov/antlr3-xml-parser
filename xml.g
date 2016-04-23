@@ -11,6 +11,7 @@ EmptyTag;
 Content;
 Element;
 Reference;
+CommentNode;
 }
 
 @lexer::members {
@@ -27,7 +28,7 @@ stag		: Open name (WS attribute)* WS? Close -> ^(StartTag name attribute*);
 attribute	: Name Eq att_value -> ^(Name att_value);
 etag		: OpenSlash name WS? Close -> ^(EndTag name);
 content		: content_impl -> ^(Content content_impl?);
-content_impl	: char_data? ((element | reference) char_data?)*;
+content_impl	: char_data? ((element | reference | comment) char_data?)*;
 
 empty_elem_tag	: Open name WS? SlashClose -> ^(EmptyTag name);
 
@@ -54,9 +55,12 @@ att_value	: DQuoteOpen! (DQuotedPart | reference)* DQuoteClose! |
 		  SQuoteOpen! (SQuotedPart | reference)* SQuoteClose!;
 
 DQuoteOpen	: {inside_tag && !squoted && !dquoted}?=> '"' {dquoted = true;};
-DQuoteClose	: {dquoted}?=> '"' {dquoted = false;};	
+DQuoteClose	: {dquoted}?=> '"' {dquoted = false;};
 SQuoteOpen	: {inside_tag && !squoted && !dquoted}?=> '\'' {squoted = true;};
-SQuoteClose	: {squoted}?=> '\'' {squoted = false;};	
+SQuoteClose	: {squoted}?=> '\'' {squoted = false;};
+
+comment		: Comment -> ^(CommentNode Comment);
+Comment		: '<!--' (CharNotDash | ('-' CharNotDash))* '-->';
 
 CharRefDec	: '&#' Digit+ ';';
 CharRefHex	: '&#x' HexDigit+ ';';
@@ -74,6 +78,9 @@ fragment
 NameHead	: (Letter | '_' | ':');
 fragment
 NameTail	: (Letter | Digit | '.' | '-' | '_' | ':')*;
+
+fragment
+CharNotDash	: '\t' | '\n' | '\r' | ' ' .. '\u002c' | '\u002e'..'\u007f'; // dash `-` is 2d
 
 WS		: (' ' | '\t' | '\r' | '\n')+;
 ws		: WS;
