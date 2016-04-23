@@ -21,12 +21,12 @@ document	: element EOF;
 
 element		: empty_elem_tag -> ^(Element empty_elem_tag) |
 		  stag content etag -> ^(Element stag content etag);
-stag		: Open name Close -> ^(StartTag name);
-etag		: OpenSlash name Close -> ^(EndTag name);
+stag		: Open name WS? Close -> ^(StartTag name);
+etag		: OpenSlash name WS? Close -> ^(EndTag name);
 content		: content_impl -> ^(Content content_impl);
 content_impl	: char_data? ((element | reference) char_data?)*;
 
-empty_elem_tag	: Open name SlashClose -> ^(EmptyTag name);
+empty_elem_tag	: Open name WS? SlashClose -> ^(EmptyTag name);
 
 Open		: '<' { inside_tag = true; };
 OpenSlash	: '</' { inside_tag = true; };
@@ -58,8 +58,11 @@ NameHead	: (Letter | '_' | ':');
 fragment
 NameTail	: (Letter | Digit | '.' | '-' | '_' | ':')*;
 
+WS		: (' ' | '\t' | '\r' | '\n')+;
+ws		: WS;
 
-test	:	(name | char_data | reference | invalid_ref | t )* EOF;
+
+test	:	(name | char_data | reference | invalid_ref | t | ws )* EOF;
 //name	:	Name;
 //char_data	:	CharData;
 invalid_ref	: InvalidRef;
