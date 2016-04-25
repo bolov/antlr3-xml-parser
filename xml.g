@@ -16,11 +16,12 @@ CommentNode;
 
 @lexer::members {
 	boolean inside_tag = false;
+	int depth = 0;
 	boolean squoted = false;
 	boolean dquoted = false;
 }
 
-document	: element EOF;
+document	: element misc* EOF;
 
 element		: empty_elem_tag -> ^(Element empty_elem_tag) |
 		  stag content etag -> ^(Element stag content etag);
@@ -32,15 +33,15 @@ content_impl	: char_data? ((element | reference | comment) char_data?)*;
 
 empty_elem_tag	: Open name WS? SlashClose -> ^(EmptyTag name);
 
-Open		: '<' { inside_tag = true; };
-OpenSlash	: '</' { inside_tag = true; };
+Open		: '<' { inside_tag = true; depth++; };
+OpenSlash	: '</' { inside_tag = true; depth--; };
 
 char_data	: CharData;
-CharData	: {!inside_tag}?=> ~('<' | '&')+;
+CharData	: {!inside_tag && depth > 0}?=> ~('<' | '&')+;
 
 Close		: {inside_tag && !squoted && !dquoted}?=> '>' { inside_tag = false; };
 Slash		: {inside_tag && !squoted && !dquoted}?=> '/';
-SlashClose	: {inside_tag && !squoted && !dquoted}?=> '/>' { inside_tag = false; };
+SlashClose	: {inside_tag && !squoted && !dquoted}?=> '/>' { inside_tag = false; depth--; };
 
 name		: Name;
 Name		: {inside_tag && !squoted && !dquoted}?=> NameHead NameTail;
@@ -61,6 +62,8 @@ SQuoteClose	: {squoted}?=> '\'' {squoted = false;};
 
 comment		: Comment -> ^(CommentNode Comment);
 Comment		: '<!--' (CharNotDash | ('-' CharNotDash))* '-->';
+
+misc		: comment | WS!;
 
 CharRefDec	: '&#' Digit+ ';';
 CharRefHex	: '&#x' HexDigit+ ';';
