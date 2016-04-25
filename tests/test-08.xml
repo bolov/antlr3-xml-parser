@@ -1,0 +1,15 @@
+<yolo id="root" name="N/A" trolo="better &gt; worst">
+    <!--never question this-->
+    <statement>This is <b>me</b> and nobody can tell me anythin else!</statement>
+    <person name='John "Jonny" Doe'>Who's hungry?&amp;&lt;</person>
+    <!--
+      Hello,
+         I am a multi-line XML comment
+         <staticText>
+            <reportElement x="180" y="0" width="200" height="20"/>
+            <text><![CDATA[Hello World!]]></text>
+          </staticText>
+      -->
+    <answer>It's been a long day. I am hungry!</answer>
+</yolo>
+<!-- Last comment of the day -->
